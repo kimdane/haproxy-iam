@@ -1,0 +1,100 @@
+global
+  maxconn 2048
+  tune.ssl.default-dh-param 2048
+  log 127.0.0.1 local0
+  log 127.0.0.1 local1 notice
+
+defaults
+  log global
+  option dontlognull
+  timeout connect 5000ms
+  timeout client 50000ms
+  timeout server 50000ms
+
+listen stats :443
+  mode http
+  stats enable
+  stats uri /haproxy?stats
+  stats realm Haproxy\ Statistics
+  stats auth admin:Secret1
+
+frontend ldaps
+   mode tcp
+   option tcplog
+   bind *:636 ssl crt /usr/local/etc/haproxy/combined.pem
+   default_backend opendj_s
+
+frontend ldap
+   mode tcp
+   option tcplog
+   bind *:389 
+   default_backend opendj
+
+frontend www-https
+  mode http
+  option forwardfor
+  option http-server-close
+  option httplog
+   bind *:443 ssl crt /usr/local/etc/haproxy/combined.pem
+   mode http
+   reqadd X-Forwarded-Proto:\ https
+acl msg-url-1 url_reg ^\/sso/.*
+acl msg-url-2 url_reg ^\/openidm.*
+acl msg-url-3 url_reg ^\/profile/.*
+
+use_backend openam_s  if  msg-url-1
+use_backend openidm_s  if  msg-url-2
+use_backend openidm_s  if  msg-url-3
+
+
+frontend www
+  mode http
+  option httplog
+   bind *:80
+   mode http
+acl msg-url-1 url_reg ^\/sso/.*
+acl msg-url-2 url_reg .*openidm.*
+acl msg-url-3 url_reg ^\/profile/.*
+
+use_backend openam  if  msg-url-1
+use_backend openidm  if  msg-url-2
+use_backend openidm  if  msg-url-3
+
+backend openam
+  mode http
+   option httpchk
+   option log-health-checks
+   cookie amlbcookie prefix
+   PLACEHOLDER_AM
+
+backend openidm
+  mode http
+   option log-health-checks
+   option httpchk
+   PLACEHOLDER_IDM
+
+backend openam_s
+  mode http
+   option log-health-checks
+   option httpchk
+   option ssl-hello-chk
+   cookie amlbcookie prefix
+   PLACEHOLDER_AM_S
+
+backend openidm_s
+  mode http
+   option httpchk
+   option log-health-checks
+   option ssl-hello-chk
+   PLACEHOLDER_IDM_S
+
+backend opendj_s
+   mode tcp
+   option ldap-check
+   option ssl-hello-chk
+   PLACEHOLDER_DJ_S
+
+backend opendj
+   mode tcp
+   option ldap-check
+   PLACEHOLDER_DJ
