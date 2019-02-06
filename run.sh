@@ -1,7 +1,8 @@
 #!/bin/sh
 
 if [ -f /etc/ssl/combined.pem ]; then
-	sed -i 's/iam.example.com/'$(openssl x509 -noout -subject -in /etc/ssl/combined.pem | sed "s/^.*CN=\*\./iam./" | sed "s/^.*CN=//" | sed "s/\/.*$//")'/' /usr/local/etc/haproxy/haproxy.cfg
+	FQDN=$(openssl x509 -noout -subject -in /etc/ssl/combined.pem | sed "s/^.*CN=\*\./iam./" | sed "s/^.*CN=//" | sed "s/\/.*$//")
+	sed -i 's/iam.example.com//g' /usr/local/etc/haproxy/haproxy.cfg
 else
 	mkdir -p /etc/ssl
 	cd /etc/ssl
