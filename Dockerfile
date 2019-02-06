@@ -1,5 +1,5 @@
 FROM haproxy:1.5
-MAINTAINER kim@conduct.no
+MAINTAINER kimdane
 
 RUN apt-get update && apt-get install -y openssl --no-install-recommends && rm -rf /var/lib/apt/lists/*
 WORKDIR /etc/ssl
